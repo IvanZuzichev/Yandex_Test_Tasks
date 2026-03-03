@@ -1,0 +1,100 @@
+/* Я НЕ ПОНИМАЮ ПОЧЕМУ АНИМАЦИЯ НЕ ВЕРНА*/
+#start:not(:checked) ~ .scene * {
+  animation: none !important;
+  transform: none !important;
+}
+
+#start:checked ~ .scene .ball {
+  animation: ball-roll 1.4s ease-in-out forwards;
+}
+
+@keyframes ball-roll {
+  0% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(320px, 0); 
+  }
+  100% {
+    transform: translate(480px, 110px); 
+  }
+}
+
+#start:checked ~ .scene .domino {
+  animation: domino-fall 0.3s ease-out forwards;
+}
+
+#start:checked ~ .scene .domino:nth-child(10) {
+  animation-delay: 1.4s;
+}
+#start:checked ~ .scene .domino:nth-child(9) {
+  animation-delay: 1.5s;
+}
+#start:checked ~ .scene .domino:nth-child(8) {
+  animation-delay: 1.6s;
+}
+#start:checked ~ .scene .domino:nth-child(7) {
+  animation-delay: 1.7s;
+}
+#start:checked ~ .scene .domino:nth-child(6) {
+  animation-delay: 1.8s;
+}
+#start:checked ~ .scene .domino:nth-child(5) {
+  animation-delay: 1.9s;
+}
+#start:checked ~ .scene .domino:nth-child(4) {
+  animation-delay: 2.0s;
+}
+#start:checked ~ .scene .domino:nth-child(3) {
+  animation-delay: 2.1s;
+}
+#start:checked ~ .scene .domino:nth-child(2) {
+  animation-delay: 2.2s;
+}
+#start:checked ~ .scene .domino:nth-child(1) {
+  animation-delay: 2.3s;
+}
+
+@keyframes domino-fall {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-78deg);
+  }
+}
+
+#start:checked ~ .scene .flag .light {
+  transition: opacity 0.5s ease;
+  transition-delay: 2.6s;
+  opacity: 1;
+}
+
+#start:checked ~ .scene .flag span {
+  animation: flag-pop 0.5s ease-out 2.6s forwards;
+}
+
+@keyframes flag-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#start:checked ~ .scene .gate {
+  transform: perspective(400px) rotateX(78deg);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+#start:not(:checked) ~ .scene .gate {
+  transform: perspective(400px) rotateX(0);
+  transition: transform 0.3s ease;
+}

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CSS Goldberg Machine — no JS</title>
+
+    <style>
+        @import url("./solution.css") layer(solution);
+    </style>
+
+    <style>
+        :root {
+            --bg: #0f1020;
+            --panel: #191a2b;
+            --metal: #2a2c44;
+            --accent: #6ee7ff;
+            --warn: #ffad42;
+            --ok: #9eff8f;
+            --ball: #ff5d8f;
+            --t-domino-start: 2.8s;
+            --domino-step: 0.18s;
+            --t-success: 5.05s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            color: #e8ebff;
+            font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+            background: radial-gradient(circle at 30% 20%, #1a1c36 0%, #0f1020 60%),
+            var(--bg);
+        }
+
+        .wrap {
+            width: min(900px, 92vw);
+        }
+
+        h1 {
+            margin: 8px 0 14px;
+            font-size: clamp(18px, 2.8vw, 28px);
+            opacity: .92;
+        }
+
+        .start {
+            position: absolute;
+            overflow: hidden;
+            clip-path: inset(50%);
+        }
+
+        .scene {
+            position: relative;
+            padding: 22px 22px 28px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(110,231,255,.06) 0 20%, transparent 40%),
+            var(--panel);
+            box-shadow: 0 0 0 1px rgba(110,231,255,.08) inset,
+            0 10px 40px rgba(0,0,0,.25);
+        }
+
+        .lever {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08));
+            box-shadow: 0 1px 0 rgba(255,255,255,.06) inset,
+            0 6px 16px rgba(0,0,0,.25);
+            transition: transform .2s ease;
+        }
+
+        .lever:hover {
+            transform: translateY(-1px);
+        }
+
+        .knob {
+            position: relative;
+            inline-size: 42px;
+            block-size: 24px;
+            border-radius: 999px;
+            background: var(--metal);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
+        }
+
+        .knob::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            inline-size: 18px;
+            block-size: 18px;
+            border-radius: 50%;
+            background: var(--warn);
+            box-shadow: 0 2px 6px rgba(0,0,0,.4);
+            transition: left .25s cubic-bezier(.2,.8,.2,1), background .25s;
+        }
+
+        .status {
+            margin-left: auto;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            letter-spacing: .4px;
+            color: var(--accent);
+            background: rgba(110,231,255,.08);
+            border: 1px solid rgba(110,231,255,.15);
+        }
+
+        .start:checked ~ .scene .knob::after {
+            left: 21px;
+            background: var(--ok);
+        }
+
+        .start:checked ~ .scene .status {
+            color: var(--ok);
+            background: rgba(158,255,143,.08);
+            border-color: rgba(158,255,143,.18);
+        }
+
+        .board {
+            position: relative;
+            height: 380px;
+            margin-top: 18px;
+            padding: 22px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.12));
+            outline: 1px solid rgba(255,255,255,.06);
+        }
+
+        .gate {
+            position: absolute;
+            left: 26px;
+            top: 28px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #2b2d48, #20223a);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
+            transform-origin: bottom;
+            transform: perspective(400px) rotateX(0);
+            transition: transform .6s cubic-bezier(.2,.9,.2,1);
+        }
+
+        .start:checked ~ .scene .gate {
+            transform: perspective(400px) rotateX(78deg);
+        }
+
+        .ramp {
+            position: absolute;
+            left: 24px;
+            top: 60px;
+            width: 260px;
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #24263e, #2b2d48);
+            box-shadow: 0 2px 8px rgba(0,0,0,.3);
+            transform: skewX(-18deg);
+        }
+
+        .ball {
+            position: absolute;
+            left: 40px;
+            top: 36px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff6, transparent 60%),
+            var(--ball);
+            box-shadow: 0 6px 10px rgba(0,0,0,.45);
+            transform: translate(0,0);
+            /* solution.css будет анимировать transform */
+            will-change: transform;
+        }
+
+        .dominos {
+            position: absolute;
+            left: 310px;
+            top: 130px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .domino {
+            width: 12px;
+            height: 46px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, #fafcff, #cfd8ff);
+            box-shadow: 0 4px 12px rgba(0,0,0,.35);
+            transform: rotate(0deg);
+            transform-origin: bottom left;
+            will-change: transform;
+            --i: 0;
+        }
+
+     
+        .flag {
+            position: absolute;
+            right: 26px;
+            bottom: 24px;
+            width: 140px;
+            height: 80px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #22253c, #181a2e);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,.06);
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+        }
+
+        .flag .light {
+            position: absolute;
+            inset: -40%;
+            background: conic-gradient(from 210deg, transparent 60%, rgba(158,255,143,.12) 80%, transparent 100%);
+            filter: blur(18px);
+            opacity: 0;
+            transition: opacity .6s ease;
+        }
+
+        .flag span {
+            font-weight: 700;
+            letter-spacing: .6px;
+            background: linear-gradient(90deg, var(--accent), var(--ok));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            opacity: 0;
+            transform: translateY(10px) scale(.95);
+            will-change: transform, opacity;
+        }
+
+     
+        .start:checked ~ .scene .flag .light {
+            transition-delay: var(--t-success);
+            opacity: 1;
+        }
+
+        .start:checked ~ .scene .flag span {
+            animation: pop .6s var(--t-success) both;
+        }
+
+        .helper {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .12;
+            mix-blend-mode: screen;
+            background-image: linear-gradient(transparent 23px, rgba(110,231,255,.06) 24px),
+            linear-gradient(90deg, transparent 23px, rgba(110,231,255,.06) 24px);
+            background-size: 24px 24px;
+        }
+#start:not(:checked) ~ .scene * {
+  animation: none !important;
+  transform: none !important;
+}
+
+#start:checked ~ .scene .ball {
+  animation: ball-roll 1.4s ease-in-out forwards;
+}
+
+@keyframes ball-roll {
+  0% {
+    transform: translate(0, 0);
+  }
+  40% {
+    transform: translate(320px, 0); 
+  }
+  100% {
+    transform: translate(480px, 110px); 
+  }
+}
+
+#start:checked ~ .scene .domino {
+  animation: domino-fall 0.3s ease-out forwards;
+}
+
+#start:checked ~ .scene .domino:nth-child(10) {
+  animation-delay: 1.4s;
+}
+#start:checked ~ .scene .domino:nth-child(9) {
+  animation-delay: 1.5s;
+}
+#start:checked ~ .scene .domino:nth-child(8) {
+  animation-delay: 1.6s;
+}
+#start:checked ~ .scene .domino:nth-child(7) {
+  animation-delay: 1.7s;
+}
+#start:checked ~ .scene .domino:nth-child(6) {
+  animation-delay: 1.8s;
+}
+#start:checked ~ .scene .domino:nth-child(5) {
+  animation-delay: 1.9s;
+}
+#start:checked ~ .scene .domino:nth-child(4) {
+  animation-delay: 2.0s;
+}
+#start:checked ~ .scene .domino:nth-child(3) {
+  animation-delay: 2.1s;
+}
+#start:checked ~ .scene .domino:nth-child(2) {
+  animation-delay: 2.2s;
+}
+#start:checked ~ .scene .domino:nth-child(1) {
+  animation-delay: 2.3s;
+}
+
+@keyframes domino-fall {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-78deg);
+  }
+}
+
+#start:checked ~ .scene .flag .light {
+  transition: opacity 0.5s ease;
+  transition-delay: 2.6s;
+  opacity: 1;
+}
+
+#start:checked ~ .scene .flag span {
+  animation: flag-pop 0.5s ease-out 2.6s forwards;
+}
+
+@keyframes flag-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#start:checked ~ .scene .gate {
+  transform: perspective(400px) rotateX(78deg);
+  transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+#start:not(:checked) ~ .scene .gate {
+  transform: perspective(400px) rotateX(0);
+  transition: transform 0.3s ease;
+}
+    </style>
+</head>
+
+<body>
+<div class="wrap">
+    <h1>CSS-машина Руба Голдберга (без JS)</h1>
+
+    <!-- Trigger -->
+    <input id="start" class="start" type="checkbox" />
+
+    <div class="scene">
+        <label class="lever" for="start" title="Старт!" data-test="control">
+            <span class="knob" aria-hidden="true"></span>
+            Запуск
+            <span class="status" data-test="status">IDLE</span>
+        </label>
+
+        <div class="board" data-test="board">
+            <div class="gate" aria-hidden="true" data-test="gate"></div>
+            <div class="ramp" aria-hidden="true"></div>
+
+            <div class="ball" aria-hidden="true" data-test="ball"></div>
+
+            <div class="dominos" aria-hidden="true" data-test="dominos">
+                <div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div>
+                <div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div>
+                <div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div><div class="domino" data-test="domino"></div>
+                <div class="domino" data-test="domino"></div>
+            </div>
+
+            <div class="flag" data-test="success">
+                <div class="light" aria-hidden="true"></div>
+                <span>SUCCESS</span>
+            </div>
+
+            <div class="helper" aria-hidden="true"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
